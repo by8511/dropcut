@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>drop cut v1.2 · 犀利乐评生成器</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root {
+      --bg: #f7f4ee;
+      --ink: #11110f;
+      --muted: #6f6a61;
+      --line: rgba(17, 17, 15, .12);
+      --card: rgba(255, 255, 255, .82);
+      --acid: #c9ff2f;
+      --red: #ff4a3d;
+      --shadow: 0 22px 70px rgba(35, 29, 20, .14);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg); scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% -8%, rgba(201, 255, 47, .32), transparent 22rem),
+        radial-gradient(circle at 110% 4%, rgba(255, 74, 61, .14), transparent 20rem),
+        linear-gradient(180deg, #fffaf1 0%, #f7f4ee 52%, #fff 100%);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, textarea, a { -webkit-tap-highlight-color: transparent; }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+    canvas { display: block; }
+    .app { width: min(430px, 100%); min-height: 100vh; margin: 0 auto; padding: 12px 14px 98px; }
+    .topbar {
+      position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin: -12px -14px 12px; padding: calc(12px + env(safe-area-inset-top)) 14px 10px;
+      background: rgba(255, 250, 241, .84); border-bottom: 1px solid rgba(255,255,255,.78); backdrop-filter: blur(18px) saturate(1.25);
+    }
+    .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .brand-mark { width: 34px; height: 34px; flex: 0 0 auto; border-radius: 12px; background: #11110f; position: relative; overflow: hidden; box-shadow: 0 13px 30px rgba(17,17,15,.2); }
+    .brand-mark::after { content: ""; position: absolute; inset: 9px 6px; background: var(--acid); transform: rotate(-12deg); }
+    .eyebrow, .brand small { display: block; color: var(--muted); font-size: 11px; font-weight: 900; letter-spacing: 0; text-transform: uppercase; }
+    .brand strong { display: block; font-size: 16px; line-height: 1.08; }
+    .pill { padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.72); color: var(--muted); font-size: 12px; font-weight: 900; white-space: nowrap; }
+    .glass { background: var(--card); border: 1px solid rgba(255,255,255,.78); border-radius: 24px; box-shadow: var(--shadow); backdrop-filter: blur(22px) saturate(1.22); }
+    .screen { display: none; min-height: calc(100vh - 138px); }
+    .screen.active { display: block; animation: rise .56s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .hero { min-height: calc(100vh - 146px); display: flex; flex-direction: column; justify-content: center; gap: 20px; padding: 20px; color: #fff; background: linear-gradient(145deg, rgba(17,17,15,.96), rgba(17,17,15,.9)); overflow: hidden; position: relative; }
+    .hero::before { content: ""; position: absolute; width: 230px; height: 230px; right: -88px; top: -78px; border-radius: 50%; background: radial-gradient(circle, rgba(201,255,47,.95), rgba(201,255,47,.1) 64%, transparent 70%); }
+    .hero > * { position: relative; z-index: 1; }
+    .hero h1 { margin: 0; max-width: 320px; font-size: clamp(58px, 18vw, 82px); line-height: .84; letter-spacing: 0; text-transform: lowercase; }
+    .hero .line { width: 92px; height: 8px; border-radius: 999px; background: var(--acid); }
+    .hero-title { display: grid; gap: 16px; }
+    .panel { padding: 16px; }
+    .panel h2 { margin: 4px 0 0; font-size: 26px; letter-spacing: 0; }
+    .intro-copy { margin: 12px 0 0; color: rgba(17,17,15,.72); font-size: 14px; line-height: 1.65; font-weight: 760; }
+    .field { display: grid; gap: 7px; margin-top: 12px; }
+    .field label { color: var(--muted); font-size: 12px; font-weight: 900; }
+    .field input { width: 100%; min-height: 50px; padding: 0 13px; border: 1px solid var(--line); border-radius: 16px; outline: none; background: rgba(255,255,255,.86); color: var(--ink); }
+    .field input:focus { border-color: rgba(201,255,47,.9); box-shadow: 0 0 0 4px rgba(201,255,47,.18); }
+    .button, button.button { display: inline-flex; align-items: center; justify-content: center; min-height: 50px; padding: 0 16px; border: 0; border-radius: 999px; font-weight: 950; }
+    .button.primary { background: var(--acid); color: #11110f; box-shadow: 0 14px 34px rgba(201,255,47,.34); }
+    .button.dark { background: var(--ink); color: #fff; }
+    .button.secondary { background: rgba(255,255,255,.8); color: var(--ink); border: 1px solid var(--line); }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .actions.single { grid-template-columns: 1fr; }
+    .process-wrap { min-height: calc(100vh - 146px); display: grid; align-content: center; gap: 14px; }
+    .process-title { padding: 18px; }
+    .process-title h2 { margin: 4px 0 0; font-size: 36px; line-height: 1; }
+    .progress { display: grid; gap: 9px; }
+    .step { display: none; grid-template-columns: 30px 1fr auto; align-items: center; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 20px; background: rgba(255,255,255,.7); color: var(--muted); font-size: 14px; font-weight: 900; }
+    .step.visible { display: grid; animation: stepIn .24s ease both; }
+    @keyframes stepIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .step.visible { animation-duration: .48s; }
+    .dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgba(17,17,15,.08); color: var(--muted); }
+    .step.done { color: var(--ink); border-color: rgba(201,255,47,.78); }
+    .step.done .dot { background: var(--acid); color: var(--ink); }
+    .step.active { color: var(--ink); border-color: rgba(255,74,61,.44); box-shadow: 0 10px 28px rgba(255,74,61,.12); }
+    .step.active .dot { background: var(--red); color: #fff; }
+    .step small { color: var(--muted); font-size: 11px; }
+    .score-card { display: grid; grid-template-columns: 104px 1fr; gap: 14px; align-items: center; padding: 14px; border-radius: 24px; background: #11110f; color: #fff; }
+    .score { width: 104px; height: 104px; border-radius: 30px; display: grid; place-items: center; background: var(--acid); color: #11110f; font-size: 34px; font-weight: 1000; }
+    .score span { display: grid; gap: 3px; text-align: center; }
+    .score small { font-size: 13px; font-weight: 950; }
+    .score em { font-style: normal; font-size: 11px; font-weight: 900; }
+    .score-card h2 { margin: 4px 0 0; font-size: 24px; line-height: 1.15; }
+    .artist-line { margin: 6px 0 0; color: rgba(247,244,238,.62); font-size: 13px; font-weight: 850; }
+    .review { margin-top: 12px; padding: 18px; }
+    .review h3 { margin: 0; font-size: 24px; }
+    .review p { margin: 14px 0 0; color: #26231e; font-size: 15px; line-height: 1.72; font-weight: 650; white-space: pre-line; }
+    .punch-lines { display: none; gap: 8px; margin-top: 16px; }
+    .punch-lines span { display: block; padding: 11px 12px; border-radius: 16px; background: rgba(17,17,15,.06); color: #11110f; font-size: 16px; line-height: 1.5; font-weight: 900; }
+    .gold { margin-top: 12px; padding: 18px; border-radius: 24px; background: linear-gradient(135deg, #11110f, #26231e); color: #fff; }
+    .gold blockquote { margin: 10px 0 0; font-size: 25px; line-height: 1.22; font-weight: 950; }
+    .share-card { padding: 16px; }
+    .poster-preview { width: 100%; aspect-ratio: 9 / 16; border-radius: 22px; background: #11110f; box-shadow: 0 22px 64px rgba(17,17,15,.18); }
+    .poster-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .copy-box { margin-top: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.66); color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .risk { margin-top: 12px; padding: 12px; border-radius: 18px; background: rgba(255,74,61,.1); color: #893028; font-size: 12px; line-height: 1.55; font-weight: 800; }
+    .intro-panel .intro-copy { margin-top: 0; }
+    .upload-disclaimer { color: rgba(247,244,238,.76); background: rgba(255,255,255,.1); }
+    .bottom-nav { position: fixed; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 30; width: min(390px, calc(100% - 24px)); transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 7px; border-radius: 999px; background: rgba(255,255,255,.86); border: 1px solid rgba(255,255,255,.82); box-shadow: 0 20px 60px rgba(17,17,15,.18); backdrop-filter: blur(18px) saturate(1.2); }
+    .bottom-nav a { min-height: 42px; display: grid; place-items: center; border-radius: 999px; color: var(--muted); font-size: 13px; font-weight: 950; }
+    .bottom-nav a.active { background: var(--ink); color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="#upload" aria-label="drop cut">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span><small>music review · v1.2</small><strong>drop cut</strong></span>
+      </a>
+      <span class="pill" id="statusPill">用户端</span>
+    </header>
+
+    <main>
+      <section class="screen active" id="upload">
+        <div class="hero glass">
+          <div class="hero-title">
+            <span class="eyebrow">music in · review out</span>
+            <h1>drop cut</h1>
+            <div class="line"></div>
+          </div>
+          <article class="panel glass intro-panel">
+            <p class="intro-copy">上传一首歌，听完后给出你一段犀利点评，并生成可分享的音乐评价卡片，为音乐创作者提供即时反馈与灵感参考。</p>
+          </article>
+          <div class="panel glass">
+            <span class="eyebrow">上传作品</span>
+            <div class="field">
+              <label for="songTitle">歌曲名称</label>
+              <input id="songTitle" maxlength="32" />
+            </div>
+            <div class="field">
+              <label for="songLink">音频 / 视频 / 链接</label>
+              <input id="songLink" maxlength="100" />
+            </div>
+            <div class="actions single">
+              <button class="button primary" type="button" id="startAnalyze">开始挨骂</button>
+            </div>
+          </div>
+          <div class="risk upload-disclaimer">免责声明：评论观点仅供娱乐与创作参考；请确认上传内容拥有合法使用权，勿上传侵权或敏感内容。</div>
+        </div>
+      </section>
+
+      <section class="screen" id="process">
+        <div class="process-wrap">
+          <article class="process-title glass">
+            <span class="eyebrow" id="processEyebrow">Processing</span>
+            <h2 id="processTitle">正在分析这首歌</h2>
+          </article>
+          <div class="progress" id="steps">
+            <div class="step" data-step="0"><span class="dot">1</span><span>接收作品</span><small>upload</small></div>
+            <div class="step" data-step="1"><span class="dot">2</span><span>整理声音</span><small>audio</small></div>
+            <div class="step" data-step="2"><span class="dot">3</span><span>人声转写</span><small>text</small></div>
+            <div class="step" data-step="3"><span class="dot">4</span><span>认真听下</span><small>listen</small></div>
+            <div class="step" data-step="4"><span class="dot">5</span><span>写完乐评</span><small>write review</small></div>
+            <div class="step" data-step="5"><span class="dot">6</span><span>生成分享图</span><small>card</small></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="result">
+        <article class="score-card">
+          <div class="score"><span><small>评分</small><b id="scoreText">6.4</b><em>总分10分</em></span></div>
+          <div>
+            <h2 id="resultTitle">夏天不会再回来</h2>
+            <p class="artist-line" id="resultArtist">林川</p>
+          </div>
+        </article>
+        <article class="gold">
+          <span class="eyebrow">一句话结论</span>
+          <blockquote id="goldSentence">这首歌最大的问题，是它没有问题到值得被记住。</blockquote>
+        </article>
+        <article class="review glass">
+          <span class="eyebrow">完整乐评</span>
+          <h3 id="reviewHeadline">不好听得很努力</h3>
+          <p id="reviewText"></p>
+          <div class="punch-lines" id="punchLines" aria-label="犀利短句"></div>
+          <div class="actions single">
+            <a class="button primary" href="#share">生成分享</a>
+          </div>
+        </article>
+      </section>
+
+      <section class="screen" id="share">
+        <article class="share-card glass">
+          <canvas id="shareCanvas" class="poster-preview" width="1080" height="1920" aria-label="drop cut 乐评分享卡片预览"></canvas>
+          <div class="poster-actions">
+            <button class="button dark" type="button" id="shareBackToUpload">换一首骂</button>
+            <a class="button primary" id="downloadCard" download="drop-cut-review-card.png">保存图片</a>
+          </div>
+          <div class="copy-box" id="copyBox"></div>
+        </article>
+      </section>
+
+      <section class="screen" id="rules">
+        <article class="panel glass">
+          <span class="eyebrow">Disclaimer</span>
+          <h2>免责声明</h2>
+          <div class="risk">本页面为静态体验原型。AI 生成内容仅供娱乐与内容创作参考，不代表专业鉴定；请确保上传内容拥有合法使用权。原型不提供真实上传、付费、长期存储或版权管理能力。</div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" aria-label="底部导航">
+    <a href="#upload" class="active" data-nav="upload">上传</a>
+    <a href="#process" data-nav="process">处理</a>
+    <a href="#result" data-nav="result">乐评</a>
+    <a href="#share" data-nav="share">分享</a>
+  </nav>
+
+  <script>
+    const samples = [
+      { title: "夏天不会再回来", score: "4.2", headline: "太平了，平到没脾气", gold: "这首歌不是夏天回不来，是旋律根本没出过门。", review: "结论先说：这歌太平。旋律从头到尾像一张没压痕的纸，听不出情绪起伏，也听不出创作者到底想让谁疼一下。副歌本来应该抬起来，结果只是把音量推高，内容还是瘫在原地。热闹是热闹，没骨头。\n\n歌词更糟。全是安全词、漂亮词、不会得罪人的词，像把水词抄在本子上又重新念了一遍。编曲也很会装，铺了很多柔光和气口，好像这样就有质感。没有。它只是把一首没什么可说的歌包得很认真。不好听得很努力，但努力不能自动变成作品。" },
+      { title: "凌晨三点的告白", score: "3.8", headline: "深情得像库存尾货", gold: "它把深情唱成了批发货，越用力越廉价。", review: "这首歌最大的问题不是俗，是俗得非常自信。凌晨、告白、错过、眼泪，几张旧牌一摊开，就以为情绪成立了。旋律写得像口水歌，还自以为很流行；每到该推进的时候，它就选择拖长一个字，假装自己很痛。\n\n歌词基本是大水词集合。没有人物，没有具体场景，没有一句真正能把人刺到的表达。副歌的鼓和和声都在帮它壮胆，可内容太薄，越垫越露怯。它不是在表达爱，是在表演“我很会表达爱”。听完只剩一个判断：这不是深情，是深情的廉价复读。" },
+      { title: "别再想我", score: "4.7", headline: "嘴硬，歌更软", gold: "它说别想我，编曲却跪着求转发。", review: "结论：洒脱是假的，狼狈是真的。歌词一边装作转身离开，一边把镜头全怼在自己脸上，生怕听众真的不想。所谓克制，不过是把矫情换了件干净外套。它不锋利，也不体面，只是把旧情绪重新包装了一遍。\n\n旋律没有什么技术负担，更没有审美负担，第一句出来基本就能猜到副歌怎么走。编曲还想救，铺氛围、加低频、做空间，可这些东西只能遮灰，遮不住内容空。最可笑的是，它把“放下”唱得像求关注。嘴硬，歌软，结论很简单：别再想它。" },
+      { title: "城市边缘", score: "6.8", headline: "有审美，但手不够狠", gold: "它差一点成为作品，差一点就还是没到。", review: "这首比大多数安全货好一点。至少它没有一上来就喊，也没有急着把情绪糊到听众脸上。前半段的留白是有效的，声音也有一点冷感，听得出创作者知道什么叫克制。但好话到这里为止。\n\n问题在副歌。它明明可以继续往更硬、更暗的地方走，却突然退回流行歌的舒适区，像一个准备说真话的人，话到嘴边改成了客套。歌词有几句能看见棱角，但很快又被圆滑的旋律磨平。它不是烂歌，可也不是狠歌。它有审美，但还舍不得受伤。" },
+      { title: "梦里下雨", score: "4.5", headline: "文艺模板，空得很整齐", gold: "这不是梦，是文艺模板自动生成的潮湿感。", review: "这首歌的问题非常清楚：太标准，标准到像交作业。雨、梦、窗、远方，一套意象摆得整整齐齐，好像把这些词凑在一起就会有文学性。不会。文学性不是词语展览，情绪也不是意象堆叠。\n\n旋律软，歌词水，编曲还要装高级。那些留白听上去干净，其实只是没东西可放。声音处理得很漂亮，但漂亮不等于真诚，更不等于有内容。整首歌很干净，也很空。结论：不刺耳，但空得很熟练。" },
+      { title: "热烈的空白", score: "4.1", headline: "喊得很响，里面没人", gold: "它把热烈写成音量，把空白唱成主题。", review: "这歌的问题不是不热闹，是只剩热闹。鼓点推，和声垫，副歌往上冲，每一步都在提醒你“这里该激动了”。可音乐不是按钮，按一下观众就该燃。你得先有值得燃烧的东西。它没有。\n\n歌词里全是光、未来、奔跑、拥抱这些大词，堆在一起像一锅没盐的鸡汤。编曲很满，满到几乎不给人思考时间；这恰恰暴露了它的心虚。因为一旦留白，听众就会发现里面没货。结论很残酷：它不是热烈，是活动开场音乐误以为自己是作品。" },
+      { title: "你经过我的世界", score: "3.6", headline: "俗不可耐，还很郑重", gold: "它不是写爱情，是给陈词滥调套廉价滤镜。", review: "这首歌俗得非常完整。从题目到副歌，从咬字到和声，每一步都在复活十年前的签名档。爱情被写成一堆熟到发亮的句子，创作者还唱得很郑重，好像嗓音深一点，陈词滥调就能重新做人。\n\n旋律顺得可疑，顺到没有任何抵抗。你能提前猜到它在哪个字上拖长，哪里加和声，哪里假装心碎。编曲也很配合，温柔、圆滑、没有风险。这样的歌当然可能有人喜欢，因为它不要求听众思考。但喜欢和好不是一回事。结论：俗，且俗得没必要。" },
+      { title: "废墟里的花", score: "7.0", headline: "有伤口，但还在摆姿势", gold: "它最好的地方，是终于敢让声音难看一点。", review: "这首歌有价值，因为它至少不急着讨好。开头的声音没有被修得太圆，粗糙感留下来了，破碎感也不是贴纸。这一点比那些端着情绪、假装高级的作品强很多。它有入口，也有一点伤口。\n\n但它没狠到底。中段开始，编曲又忍不住往常规高潮里靠，像是担心听众不够感动，于是把本来可以更冷的东西加热了。歌词也有几句太用力，差点把废墟写成打卡点。结论：不是烂歌，但还不够好。它有锋芒，也有摆拍的毛病。" },
+      { title: "心跳售卖机", score: "4.8", headline: "名字像创意，歌像促销", gold: "一个好概念，救不了一首不敢冒险的歌。", review: "题目有意思，成品很普通。心跳、售卖、投币、选择，这些元素本来可以写出一点讽刺，一点荒诞，一点人和欲望的关系。结果呢？全被处理成几句俏皮话。概念像创意，落地像公式填词。\n\n旋律没有犯大错，但也没有做任何冒险。副歌还是熟悉的上扬、停顿、重复，像在公式里填词。制作有一点电子音色的小动作，可点到为止，不敢真的玩。它最可惜的地方不是失败，而是明明有机会失败得漂亮，最后选择普通得安全。结论：聪明开头，平庸收尾。" },
+      { title: "如果风知道", score: "3.4", headline: "把空洞唱成了习惯", gold: "风知不知道不重要，听众很快就不想知道了。", review: "结论：空。不是高级留白的空，是内容没填上的空。它试图用温柔唱法和柔软词句制造“很有故事”的错觉，但故事在哪里？人物在哪里？冲突在哪里？没有。只有一层又一层被打磨过的情绪外壳。\n\n旋律从头到尾绕圈，绕得礼貌，绕得平稳，也绕得无聊。编曲不出错，但所有东西都在为不出错服务。音乐最怕的不是出错，而是不敢出错。它把平庸伪装成温柔，把没有表达伪装成克制。听完不会生气，只会疲惫，因为它连烂都烂得不痛快。" }
+    ];
+    const reviewOverrides = {
+      "夏天不会再回来": { artist: "林川", review: "结论先说：这歌太平，听不出情绪变化。副歌只是把音量推高，旋律没有真正抬起来。歌词全是安全词和漂亮词，文学性站不住。编曲铺得认真，但只是把一首没什么可聊的歌包得更亮。它不是难听得离谱，是普通得很稳定。" },
+      "凌晨三点的告白": { artist: "周眠", review: "这首歌俗得很自信。旋律写得像口水歌，还以为拖长几个尾音就是深情。歌词里全是错过、眼泪、告白这些旧词，没有人物，也没有真正刺人的表达。副歌的鼓和和声都在壮胆，可内容太薄，越垫越露怯。" },
+      "别再想我": { artist: "沈亦", review: "结论：洒脱是假的，狼狈是真的。旋律没有技术负担，也没有审美负担，第一句出来就能猜到副歌走向。歌词一边说放下，一边把情绪摆得很满。编曲想用氛围救场，但内容空，空间做得再宽也没用。" },
+      "城市边缘": { artist: "灰港", review: "这首比大多数安全货好一点，前半段有克制，声音也留了一点冷感。但问题在副歌，它明明可以继续往更硬的地方走，最后还是退回流行歌的舒适区。歌词有几句棱角，很快又被圆滑旋律磨平。有审美，但手不够狠。" },
+      "梦里下雨": { artist: "陆南", review: "这首歌的问题很清楚：标准到像交作业。雨、梦、窗、远方这些意象摆得整齐，但文学性不是词语展览。旋律软，歌词水，编曲还要装高级。留白不是空着就高级，没东西可放也会显得干净。" },
+      "热烈的空白": { artist: "白昼乐队", review: "这歌不是不热闹，是只剩热闹。鼓点推、和声垫、副歌上冲，每一步都在提醒听众该激动了。可作品里没有足够的动机，热烈就立不住。歌词全是光、未来、奔跑这些大词，堆得满，却没有真正的情绪重量。" },
+      "你经过我的世界": { artist: "陈叙", review: "这首歌俗得非常完整。从题目到副歌，从咬字到和声，每一步都在复活旧式情歌套路。旋律顺得可疑，没有任何抵抗；歌词熟到发亮，却没有一句新鲜判断。这样的歌当然可能有人听，但喜欢和好不是一回事。" },
+      "废墟里的花": { artist: "孔雀石", review: "这首歌有价值，因为它至少不急着讨好。开头保留了粗糙感，破碎不是贴上去的。可惜中段又往常规高潮里靠，像是怕听众不够感动。歌词有几句太用力，把本来能成立的伤口写成了姿势。" },
+      "心跳售卖机": { artist: "蓝色废纸", review: "题目有意思，成品很普通。心跳、售卖、选择这些元素本来能写出一点讽刺，结果被处理成几句俏皮话。旋律没犯大错，也没做任何冒险。制作有电子音色的小动作，但点到为止，不敢真的玩。" },
+      "如果风知道": { artist: "南桥", review: "结论：空。不是高级留白的空，是内容没填上的空。它试图用温柔唱法制造有故事的错觉，但人物、冲突、具体表达都没有。旋律从头到尾绕圈，礼貌、平稳，也无聊。它把平庸伪装成克制。" }
+    };
+    samples.forEach((sample) => Object.assign(sample, reviewOverrides[sample.title]));
+    let current = samples[Math.floor(Math.random() * samples.length)];
+    let currentPunches = [];
+    let processTimer = null;
+    const experienceUrl = `${window.location.origin}${window.location.pathname}`;
+    const experienceQr = 'data:image/png;base64,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';
+    const getExperienceUrl = () => experienceUrl;
+    const getExperienceQr = () => `https://api.qrserver.com/v1/create-qr-code/?size=328x328&margin=0&data=${encodeURIComponent(getExperienceUrl())}`;
+    const screens = [...document.querySelectorAll('.screen')];
+    const navItems = [...document.querySelectorAll('[data-nav]')];
+    const steps = [...document.querySelectorAll('.step')];
+
+    const sharpLinePool = [
+      '这歌太平，听不出情绪的变化。',
+      '旋律写得像口水歌，还自以为很流行。',
+      '歌词里全是大水词，文学性站不住，个人表达也打不开。',
+      '比旋律更俗的，是它还真把这些歌词唱得很认真。',
+      '编曲越堆越满，越暴露内容心虚。',
+      '它把热闹当成质感，把音量当成情绪。',
+      '技巧如果不服务作品，就只是本末倒置。',
+      '鼓推得再大，也不能替旋律解决问题。',
+      '嗓子放得再软，也不能替歌词增加文学性。',
+      '漂亮制作救不了一首没有动机的歌。',
+      '这不是克制，是没东西可说之后被迫安静。',
+      '这不是高级，是把普通包装成审美。',
+      '听完不生气，说明它连冒犯听众的能力都没有。',
+      '它的问题不是太简单，是简单到没留下任何动机可聊。',
+      '人们只在乎它像不像一首歌，却没人在乎它是不是真的写好了。'
+    ];
+
+    const detailLinePool = [
+      '旋律该有起伏的地方没有起伏，该留白的地方又忙着往里塞东西。',
+      '歌词如果只是把情绪词排队站好，那不叫表达，只是词语罗列。',
+      '编曲越往后越满，但音乐的核心并没有因此变扎实。',
+      '副歌想制造公共情绪，可作品里没有足够的内容支撑。'
+    ];
+
+    function pickSharpLines() {
+      const sharp = [...sharpLinePool].sort(() => Math.random() - .5).slice(0, 2);
+      const detail = [...detailLinePool].sort(() => Math.random() - .5).slice(0, 1);
+      return [...sharp, ...detail].sort(() => Math.random() - .5);
+    }
+
+    function fullReview(sample) {
+      return [sample.review.replace(/\n\n/g, '\n'), ...currentPunches].join('\n');
+    }
+    function showScreen(id) {
+      screens.forEach((screen) => screen.classList.toggle('active', screen.id === id));
+      navItems.forEach((item) => item.classList.toggle('active', item.dataset.nav === id));
+      if (id === 'share') drawCard();
+    }
+    function applySample(sample) {
+      current = sample;
+      document.getElementById('songTitle').value = sample.title;
+      document.getElementById('songLink').value = `https://example.com/${encodeURIComponent(sample.title)}.mp3`;
+      document.getElementById('resultTitle').textContent = sample.title;
+      document.getElementById('resultArtist').textContent = sample.artist;
+      document.getElementById('scoreText').textContent = sample.score;
+      document.getElementById('goldSentence').textContent = sample.gold;
+      document.getElementById('reviewHeadline').textContent = sample.headline;
+      currentPunches = pickSharpLines();
+      document.getElementById('reviewText').textContent = fullReview(sample);
+      document.getElementById('punchLines').innerHTML = '';
+      document.getElementById('copyBox').textContent = `“${sample.gold}” #dropcut #乐评 #新歌评价`;
+      drawCard();
+    }
+    function setStep(active) {
+      steps.forEach((step, index) => {
+        step.classList.toggle('visible', index <= active);
+        step.classList.toggle('done', index < active);
+        step.classList.toggle('active', index === active);
+      });
+      document.getElementById('statusPill').textContent = active >= steps.length - 1 ? '已生成' : '处理中';
+      const analysisDone = active >= 3;
+      document.getElementById('processEyebrow').textContent = analysisDone ? 'Analysis complete' : 'Processing';
+      document.getElementById('processTitle').textContent = analysisDone ? '歌曲分析结束' : '正在分析这首歌';
+    }
+    function startAnalyze() {
+      const title = document.getElementById('songTitle').value.trim();
+      if (title) current.title = title;
+      applySample(current);
+      location.hash = 'process';
+      showScreen('process');
+      if (processTimer) window.clearTimeout(processTimer);
+      const randomBetween = (min, max) => Math.floor(min + Math.random() * (max - min + 1));
+      const durations = [
+        randomBetween(1000, 2000),
+        randomBetween(1000, 2000),
+        randomBetween(1000, 2000),
+        randomBetween(2000, 3000),
+        860,
+        860
+      ];
+      let active = -1;
+      setStep(active);
+      const advance = () => {
+        active += 1;
+        setStep(active);
+        if (active >= steps.length - 1) {
+          processTimer = window.setTimeout(() => { location.hash = 'result'; showScreen('result'); }, durations[active]);
+          return;
+        }
+        processTimer = window.setTimeout(advance, durations[active]);
+      };
+      processTimer = window.setTimeout(advance, 420);
+    }
+    function randomSample() {
+      let next = current;
+      while (next === current) next = samples[Math.floor(Math.random() * samples.length)];
+      applySample(next);
+    }
+    function backToUploadForAnother() {
+      if (processTimer) {
+        window.clearTimeout(processTimer);
+        processTimer = null;
+      }
+      randomSample();
+      setStep(-1);
+      document.getElementById('statusPill').textContent = '用户端';
+      location.hash = 'upload';
+      showScreen('upload');
+    }
+    function roundRect(ctx, x, y, width, height, radius, fillStyle) {
+      ctx.beginPath(); ctx.fillStyle = fillStyle; ctx.roundRect(x, y, width, height, radius); ctx.fill();
+    }
+    function drawText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 99) {
+      let line = ''; let lines = 0;
+      for (const char of String(text)) {
+        const test = line + char;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          ctx.fillText(line, x, y); line = char; y += lineHeight; lines += 1;
+          if (lines >= maxLines - 1) break;
+        } else line = test;
+      }
+      if (line && lines < maxLines) ctx.fillText(line, x, y);
+      return y + lineHeight;
+    }
+    function drawQr(ctx, x, y, size) {
+      roundRect(ctx, x, y, size, size, 24, '#f7f4ee');
+      const qr = new Image();
+      qr.crossOrigin = 'anonymous';
+      qr.onload = () => {
+        ctx.drawImage(qr, x + 14, y + 14, size - 28, size - 28);
+        document.getElementById('downloadCard').href = document.getElementById('shareCanvas').toDataURL('image/png');
+      };
+      qr.src = getExperienceQr();
+    }
+    function drawCard() {
+      const canvas = document.getElementById('shareCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, 1080, 1920);
+      ctx.fillStyle = '#11110f'; ctx.fillRect(0, 0, 1080, 1920);
+      const glow = ctx.createRadialGradient(160, 120, 20, 160, 120, 560);
+      glow.addColorStop(0, 'rgba(201,255,47,.92)'); glow.addColorStop(.42, 'rgba(201,255,47,.18)'); glow.addColorStop(1, 'rgba(201,255,47,0)');
+      ctx.fillStyle = glow; ctx.fillRect(0, 0, 1080, 650);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#f7f4ee'; ctx.font = '900 62px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillText('drop cut', 84, 132);
+      ctx.fillStyle = 'rgba(247,244,238,.62)'; ctx.font = '800 28px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillText('MUSIC REVIEW CARD', 84, 182);
+      roundRect(ctx, 84, 260, 912, 320, 46, '#f7f4ee');
+      ctx.fillStyle = '#11110f'; ctx.font = '900 48px -apple-system, BlinkMacSystemFont, sans-serif';
+      const titleEnd = drawText(ctx, current.title, 128, 344, 600, 58, 2);
+      ctx.fillStyle = '#6f6a61'; ctx.font = '850 28px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillText(current.artist, 128, Math.min(titleEnd + 4, 466));
+      roundRect(ctx, 744, 322, 170, 170, 40, '#c9ff2f');
+      ctx.textAlign = 'center'; ctx.font = '900 24px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillStyle = '#11110f'; ctx.fillText('评分', 829, 378);
+      ctx.font = '1000 62px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillText(current.score, 829, 438);
+      ctx.font = '850 21px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillText('总分10分', 829, 480);
+      ctx.textAlign = 'left'; ctx.fillStyle = '#6f6a61'; ctx.font = '800 28px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillText('评分不是判决，是被记住的难度。', 128, 520);
+      ctx.fillStyle = '#f7f4ee'; ctx.font = '900 44px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillText('一句话结论', 84, 720);
+      ctx.font = '1000 70px -apple-system, BlinkMacSystemFont, sans-serif'; drawText(ctx, `“${current.gold}”`, 84, 830, 900, 86, 4);
+      roundRect(ctx, 84, 1120, 912, 440, 38, 'rgba(247,244,238,.1)');
+      ctx.fillStyle = '#c9ff2f'; ctx.font = '900 34px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillText(current.headline, 124, 1190);
+      ctx.fillStyle = 'rgba(247,244,238,.82)'; ctx.font = '750 30px -apple-system, BlinkMacSystemFont, sans-serif';
+      drawText(ctx, [current.gold, ...currentPunches.slice(0, 3)].join(' '), 124, 1260, 820, 44, 7);
+      drawQr(ctx, 84, 1648, 184);
+      ctx.fillStyle = '#f7f4ee'; ctx.font = '900 32px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillText('扫码体验', 304, 1718);
+      ctx.fillStyle = 'rgba(247,244,238,.62)'; ctx.font = '700 24px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillText('上传一首歌，让 drop cut 切开它。', 304, 1762);
+      ctx.font = '700 20px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.fillText(getExperienceUrl().replace('https://', ''), 304, 1796);
+      ctx.textAlign = 'right'; ctx.fillText('评论观点仅供娱乐与创作参考', 996, 1860);
+      ctx.textAlign = 'left';
+      document.getElementById('downloadCard').href = canvas.toDataURL('image/png');
+      document.getElementById('copyBox').textContent = `“${current.gold}” #dropcut #乐评 #新歌评价`;
+    }
+    function syncHash() { showScreen((location.hash || '#upload').slice(1)); }
+    document.getElementById('startAnalyze').addEventListener('click', startAnalyze);
+    document.getElementById('shareBackToUpload').addEventListener('click', backToUploadForAnother);
+    window.addEventListener('hashchange', syncHash);
+    applySample(current);
+    syncHash();
+  </script>
+</body>
+</html>
